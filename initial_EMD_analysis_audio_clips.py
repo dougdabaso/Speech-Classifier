@@ -4,7 +4,6 @@
 
 # Importing standard modules
 import os
-import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import mode
 from numpy import *
@@ -27,7 +26,7 @@ FileNameExampleCleanSpeech = '5BDj0ow5hnA_CLEAN_SPEECH_1.wav'
 # Reaquired by now for downsampling audio signals to make the EMD calculation a little faster. The resampled signal x
 #  starts at the same value as x but is sampled with a spacing of len(x)/DownSamplingFactor*(spacing of x).
 NumberOfSamplesDownSampledSignal = 5000 # We can thing if it is worth to do so later
-thresh_range = np.linspace(0.01,1,1000)  # This is the range of threshold considered for computing the most relevant IMFs
+thresh_range = linspace(0.01,1,1000)  # This is the range of threshold considered for computing the most relevant IMFs
                                         # for more info check one of my papers published in ICASSP 2014 [2]
 
 
@@ -49,7 +48,7 @@ os.chdir(MasterPath) # Going to MasterPath
 
 # i) no speech
 NoSpeech = readwav(FileNameExampleNoSpeech) # Reading WAV signal (NoSpeech)
-NoSpeechSignal = np.array(NoSpeech[1],dtype=float) # Transforming data to a numpy array
+NoSpeechSignal = array(NoSpeech[1],dtype=float) # Transforming data to a numpy array
 NoSpeechSignal = NoSpeechSignal[:,0] # WAV is being read as 2-channel signal, we can choose the first one by now
 NoSpeechSignalDownsampled = signal.resample(NoSpeechSignal, NumberOfSamplesDownSampledSignal) # Downsampling original signal
 NoSpeechSignalEMD = EMD(NoSpeechSignalDownsampled,t=None, threshold_1=0.05, threshold_2=0.5, alpha=0.05, ndirs=4, fixe=0, maxiter=5000, fixe_h=0, n_imfs=0, nbsym=2) # Performing the Empirical Mode Decomposition
@@ -60,7 +59,7 @@ print('IMFs successfully built')
 
 # ii) speech with noise
 SpeechWithNoise = readwav(FileNameExampleSpeechWithNoise) # Reading WAV signal (SpeechWithNoise)
-SpeechWithNoiseSignal = np.array(SpeechWithNoise[1],dtype=float) # Transforming data to a numpy array
+SpeechWithNoiseSignal = array(SpeechWithNoise[1],dtype=float) # Transforming data to a numpy array
 SpeechWithNoiseSignal = SpeechWithNoiseSignal[:,0] # WAV is being read as 2-channel signal, we can choose the first one by now
 SpeechWithNoiseSignalDownsampled = signal.resample(SpeechWithNoiseSignal, NumberOfSamplesDownSampledSignal) # Downsampling original signal
 SpeechWithNoiseSignalEMD = EMD(SpeechWithNoiseSignalDownsampled,t=None, threshold_1=0.05, threshold_2=0.5, alpha=0.05, ndirs=4, fixe=0, maxiter=5000, fixe_h=0, n_imfs=0, nbsym=2) # Performing the Empirical Mode Decomposition
@@ -69,7 +68,7 @@ print('IMFs successfully built')
 
 # iii) clean speech
 CleanSpeech = readwav(FileNameExampleCleanSpeech) # Reading WAV signal (CleanSpeech)
-CleanSpeechSignal = np.array(CleanSpeech[1],dtype=float) # Transforming data to a numpy array
+CleanSpeechSignal = array(CleanSpeech[1],dtype=float) # Transforming data to a numpy array
 CleanSpeechSignal = CleanSpeechSignal[:,0] # WAV is being read as 2-channel signal, we can choose the first one by now
 CleanSpeechSignalDownsampled = signal.resample(CleanSpeechSignal, NumberOfSamplesDownSampledSignal) # Downsampling original signal
 CleanSpeechSignalEMD = EMD(CleanSpeechSignalDownsampled,t=None, threshold_1=0.05, threshold_2=0.5, alpha=0.05, ndirs=4, fixe=0, maxiter=5000, fixe_h=0, n_imfs=0, nbsym=2) # Performing the Empirical Mode Decomposition
@@ -110,14 +109,69 @@ plot_imfs(CleanSpeechSignalDownsampled, CleanSpeechSignalIMFs2)
 
 
 
+
 # Proof of concept: check if for the same p, q and M, the (in)coherence stats vary for the input signals
 
-p = 3
-q = 4
-M = 1000
+
 NoSpeechCoherentStat, NoSpeechIncoherentStat = PCStats(DenoisedNoSpeechSignal,p,q,M)
 SpeechWithNoiseCoherentStat, SpeechWithNoiseIncoherentStat = PCStats(DenoisedSpeechWithNoiseSignal,p,q,M)
 CleanSpeechCoherentStat, CleanSpeechIncoherentStat = PCStats(DenoisedCleanSpeechSignal,p,q,M)
+
+
+p = 3
+q = 4
+M = 50
+
+MySignalInTime=DenoisedSpeechWithNoiseSignal
+MySignalInTime=DenoisedCleanSpeechSignal
+
+
+
+
+
+
+tauMax = 100
+M = 1000
+IncoherenceStatNoSpeechSignal = []
+MySignalInTime = DenoisedNoSpeechSignal
+for tau in range(0, tauMax):
+    print(tau)
+    IncoherenceStatNoSpeechSignal.append(IncoDelta(MySignalInTime,tau,M))
+print('done')
+
+
+IncoherenceStatSpeechWithNoiseSignal = []
+MySignalInTime = DenoisedSpeechWithNoiseSignal
+for tau in range(0, tauMax):
+    print(tau)
+    IncoherenceStatSpeechWithNoiseSignal.append(IncoDelta(MySignalInTime,tau,M))
+print('done')
+
+
+IncoherenceStatCleanSpeechSignal = []
+MySignalInTime = DenoisedCleanSpeechSignal
+for tau in range(0, tauMax):
+    print(tau)
+    IncoherenceStatCleanSpeechSignal.append(IncoDelta(MySignalInTime,tau,M))
+print('done')
+
+
+
+
+plt.figure(1)
+plt.plot(IncoherenceStatNoSpeechSignal)
+plt.figure(2)
+plt.plot(IncoherenceStatSpeechWithNoiseSignal)
+plt.figure(3)
+plt.plot(IncoherenceStatCleanSpeechSignal)
+
+
+
+
+
+
+
+
 
 ProtoTypeFeatureVectorNoSpeech = array([NoSpeechCoherentStat,NoSpeechIncoherentStat])
 ProtoTypeFeatureVectorSpeechWithNoise = array([SpeechWithNoiseCoherentStat,SpeechWithNoiseIncoherentStat])
@@ -161,10 +215,35 @@ print(ProtoTypeFeatureVectorCleanSpeech)
 
 
 
-def PCStats(MySignalInTime,p,q,M):
+def IncoDelta(MySignalInTime,tau,M):
+# This function computes the incoherence statistics as defined in [1] in eq. (7)
 
-    # This function computes the statistics describing periodical correlations , as defined in [1] in eq. (6). As input,
-    #  it takes the signal in time, the value of p, q, and M.
+    MySignalInTime = MySignalInTime - mean(MySignalInTime) # Subtracting the mean for ACF calculation
+    # Computing the normalized autocorrelation function
+    AutoCorrFunc = correlate(MySignalInTime, MySignalInTime, mode='full')
+    NormAutoCorrFunc = AutoCorrFunc[int(ceil(AutoCorrFunc.size/2)):]/AutoCorrFunc[int(ceil(AutoCorrFunc.size/2))]
+
+    # For computations we wil be using the PSD, so the FFT of the autocorrelation function is computed
+    MyFFT = fft.fft(NormAutoCorrFunc)
+
+    # Computing coherence and incoherence statistics
+    NFFT=len(MyFFT) # Number of bins of the FFT
+    N=len(NormAutoCorrFunc) # Length of the time series used for analysis
+    L = int(ceil((N-1-tau)/M)) # Required parameter for the calculations
+
+    # Computing incoherence stat
+    deltaList = []
+    for p in range(0, L):
+        deltaList.append(zetaMag((p*M),(p*M)+tau,M,MyFFT))
+    IncoherentStat = (1 / (L + 1))*sum(deltaList)
+
+    return IncoherentStat
+
+
+
+def CoheDelta(MySignalInTime,p,q,M):
+
+
 
     MySignalInTime = MySignalInTime - mean(MySignalInTime) # Subtracting the mean for ACF calculation
     # Computing the normalized autocorrelation function
@@ -179,13 +258,11 @@ def PCStats(MySignalInTime,p,q,M):
     N=len(NormAutoCorrFunc) # Length of the time series used for analysis
     tau = abs(q-p) # Required parameter for the calculations
     L = (N-1-tau)/M # Required parameter for the calculations
-    print(L)
-    print(N)
-    print(tau)
-    CoherentStat=zetaMag(0,tau,M,MyFFT)
-    IncoherentStat=(1/(L+1))*zetaMag(p*M,p*M+tau,M,MyFFT)
 
-    return CoherentStat, IncoherentStat
+    # Coherence stat
+    CoherentStat=zetaMag(0,tau,M,MyFFT)
+
+    return CoherentStat
 
 
 
@@ -199,15 +276,16 @@ def zetaMag(p,q,M,MyFFT):
 
     NFFT = len(MyFFT) # The number of bins used in FFT
 
-    for m in range(0, M):
+    for m in range(0, M-1):
         Ind1FFT = p + m  # Indexes of FFT
         Ind2FFT = q + m  # Indexes of FFT
         # Taking into account the periodicity of the Discrete Fourier transform (check if it should be taken into consideration)
-        if (Ind1FFT > NFFT):
+        if (Ind1FFT >= NFFT):
             Ind1FFT = Ind1FFT - NFFT
-        if (Ind2FFT > NFFT):
+        if (Ind2FFT >= NFFT):
             Ind2FFT = Ind2FFT - NFFT
         # Computing components of the numerator and the denominator of (6)
+
         Num.append(abs(MyFFT[Ind1FFT] * conj(MyFFT[Ind2FFT])))
         Den1.append(abs(MyFFT[Ind1FFT]) ** 2)
         Den2.append(abs(MyFFT[Ind2FFT]) ** 2)
